@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 
-use log::{info, warn};
+use tracing::{info, warn};
 
 use crate::{Rgb, STATE, chuni_io::HRESULT};
 

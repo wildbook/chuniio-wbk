@@ -8,11 +8,12 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1.0.100"
-cute-log = "2.2.0"
-log = "0.4.29"
 parking_lot = "0.12.5"
 rusb = "0.9.4"
 shared_memory = "0.12.4"
+tracing = "0.1.43"
+tracing-chrome = "0.7.2"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "ansi"] }
 windows-sys = { version = "0.61.2", features = ["Win32_UI_Input_KeyboardAndMouse"] }
 zerocopy = "0.8.31"
 zerocopy-derive = "0.8.31"

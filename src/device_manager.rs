@@ -1,6 +1,6 @@
 use std::sync::mpsc::Receiver;
 
-use log::{error, info};
+use tracing::{error, info};
 
 use crate::{InputDevice, OutputState, Rgb, SharedState};
 

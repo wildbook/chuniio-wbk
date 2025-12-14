@@ -4,8 +4,8 @@ use std::{
     time::Duration,
 };
 
-use log::debug;
 use parking_lot::Mutex;
+use tracing::debug;
 
 use crate::{Rgb, STATE, chuni_io::HRESULT};
 
@@ -14,18 +14,18 @@ static SLIDER_ACTIVE: AtomicBool = AtomicBool::new(false);
 
 type SliderCallbackFn = extern "C" fn(data: *const [u8; 32]);
 
+extern "C" fn dummy_callback(_data: *const [u8; 32]) {}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn chuni_io_slider_init() -> HRESULT {
     debug!("chuni_io_slider_init");
     0
 }
 
-extern "C" fn dummy_callback(_data: *const [u8; 32]) {}
-
 #[unsafe(no_mangle)]
 pub extern "C" fn chuni_io_slider_start(callback: Option<SliderCallbackFn>) {
     static CALLBACK_FN: AtomicPtr<()> /* SliderCallbackFn */ = AtomicPtr::new(dummy_callback as _);
-    debug!("chuni_io_slider_start: {:?}", callback);
+    debug!("chuni_io_slider_start: {callback:?}");
 
     // Set the active callback, or a dummy if none pr
     let callback = callback.unwrap_or(dummy_callback);

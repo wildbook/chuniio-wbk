@@ -1,8 +1,8 @@
 use std::sync::mpsc::Sender;
 
 use anyhow::bail;
-use log::{error, info, trace};
 use rusb::{Hotplug, UsbContext};
+use tracing::{error, info, trace};
 
 use crate::{InputDevice, devices::TasollerPlus};
 
@@ -20,9 +20,10 @@ impl DeviceFinder {
         };
 
         let Some(device) = device else {
-            trace!("Unrecognized device: {desc:?}");
             return Ok(());
         };
+
+        info!("Recognized device!");
 
         if let Err(e) = self.0.send(Box::new(device?)) {
             error!("Failed to send device: {e:?}");
@@ -34,13 +35,13 @@ impl DeviceFinder {
 
 impl<T: UsbContext + 'static> Hotplug<T> for DeviceFinder {
     fn device_arrived(&mut self, device: rusb::Device<T>) {
-        trace!("Device arrived: {:?}", device);
+        trace!("Device arrived: {device:?}");
         if let Err(e) = self.try_handle(device) {
-            error!("Failed to handle device: {:?}", e);
+            error!("Failed to handle device: {e:?}");
         }
     }
 
     fn device_left(&mut self, device: rusb::Device<T>) {
-        info!("Device disconnected: {:?}", device);
+        info!("Device disconnected: {device:?}");
     }
 }

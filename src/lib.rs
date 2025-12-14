@@ -8,9 +8,9 @@ use std::{
     time::Duration,
 };
 
-use log::{debug, info};
 use parking_lot::Mutex;
 use rusb::{GlobalContext, HotplugBuilder};
+use tracing::{debug, info};
 use zerocopy::FromZeros;
 use zerocopy_derive::FromZeros;
 
@@ -112,8 +112,6 @@ fn init_host(state: *mut SharedState) {
 }
 
 fn initialize() {
-    logger::init_logger();
-
     let len = std::mem::size_of::<SharedState>();
     let mem = shared_memory::create("chuniio_wbk_shared", len) //
         .expect("Failed to create shared memory");
@@ -135,9 +133,13 @@ extern "system" fn DllMain(_hinst: *mut c_void, reason: u32, _reserved: *mut c_v
     const DLL_PROCESS_DETACH: u32 = 0;
 
     static THREAD: Mutex<Option<JoinHandle<()>>> = Mutex::new(None);
+    static LOGGER: Mutex<Option<logger::Guard>> = Mutex::new(None);
 
     match reason {
-        DLL_PROCESS_ATTACH => *THREAD.lock() = Some(std::thread::spawn(initialize)),
+        DLL_PROCESS_ATTACH => {
+            *LOGGER.lock() = Some(logger::init_logger());
+            *THREAD.lock() = Some(std::thread::spawn(initialize));
+        }
         DLL_PROCESS_DETACH => {
             SHUTDOWN.store(true, Ordering::Release);
 
@@ -145,6 +147,8 @@ extern "system" fn DllMain(_hinst: *mut c_void, reason: u32, _reserved: *mut c_v
                 info!("Waiting for main thread to exit.");
                 handle.join().unwrap();
             }
+
+            LOGGER.lock().take();
         }
         _ => {}
     }

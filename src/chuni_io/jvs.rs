@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 
-use log::info;
+use tracing::info;
 
 use crate::{STATE, chuni_io::HRESULT};
 
