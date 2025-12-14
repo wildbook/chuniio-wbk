@@ -1,9 +1,10 @@
 use std::{
     ffi::c_void,
     sync::{
-        OnceLock,
+        Mutex, OnceLock,
         atomic::{AtomicBool, AtomicPtr, Ordering},
     },
+    thread::JoinHandle,
     time::Duration,
 };
 
@@ -138,12 +139,17 @@ extern "system" fn DllMain(_hinst: *mut c_void, reason: u32, _reserved: *mut c_v
     const DLL_PROCESS_ATTACH: u32 = 1;
     const DLL_PROCESS_DETACH: u32 = 0;
 
+    static THREAD: Mutex<Option<JoinHandle<()>>> = Mutex::new(None);
+
     match reason {
-        DLL_PROCESS_ATTACH => {
-            std::thread::spawn(initialize);
-        }
+        DLL_PROCESS_ATTACH => *THREAD.lock().unwrap() = Some(std::thread::spawn(initialize)),
         DLL_PROCESS_DETACH => {
             SHUTDOWN.store(true, Ordering::Release);
+
+            if let Some(handle) = THREAD.lock().unwrap().take() {
+                info!("Waiting for main thread to exit.");
+                handle.join().unwrap();
+            }
         }
         _ => {}
     }
