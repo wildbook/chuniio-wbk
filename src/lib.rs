@@ -100,6 +100,7 @@ fn init_host(state: *mut SharedState) {
 
     unsafe { state.write(SharedState::new_zeroed()) };
     unsafe { (*state).m = MAGIC };
+    unsafe { (*state).o.slider = [[0x33; 3]; 31] };
 
     STATE.store(state, Ordering::Release);
 
