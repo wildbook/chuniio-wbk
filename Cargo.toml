@@ -1,0 +1,19 @@
+[package]
+name = "chuniio-wbk"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1.0.100"
+env_logger = "0.11.8"
+log = "0.4.29"
+rusb = "0.9.4"
+shared_memory = "0.12.4"
+zerocopy = "0.8.31"
+zerocopy-derive = "0.8.31"
+
+[patch.crates-io]
+rusb = { git = "https://github.com/wildbook/rusb", rev = "14495ae" }
