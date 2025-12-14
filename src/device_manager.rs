@@ -2,9 +2,10 @@ use std::sync::mpsc::Receiver;
 
 use log::{error, info};
 
-use crate::{InputDevice, Rgb, SharedState};
+use crate::{InputDevice, OutputState, Rgb, SharedState};
 
 pub struct DeviceCollection {
+    coin: bool,
     recv: Receiver<Box<dyn InputDevice + 'static>>,
     devices: Vec<(Box<dyn InputDevice>, u32)>, // device + consecutive error count
 }
@@ -14,18 +15,32 @@ const MAX_CONSECUTIVE_ERRORS: u32 = 10;
 impl DeviceCollection {
     pub fn new(recv: Receiver<Box<dyn InputDevice + 'static>>) -> Self {
         Self {
+            coin: false,
             recv,
             devices: Vec::new(),
         }
     }
 }
 
-fn update_device(device: &mut Box<dyn InputDevice + 'static>, led: &[Rgb; 31]) -> anyhow::Result<((u8, u8), [u8; 32])> {
-    device.set_leds(led)?;
+struct DeviceUpdate {
+    jvs: (u8, u8),
+    val: [u8; 32],
+    coin: bool,
+}
+
+fn update_device(device: &mut Box<dyn InputDevice + 'static>, o: &OutputState) -> anyhow::Result<DeviceUpdate> {
+    let slider: &[Rgb; 31] = &o.slider;
+    let tower_l = &o.board_0_air_tower;
+    let tower_r = &o.board_1_air_tower;
+
+    device.set_leds(slider, tower_l, tower_r)?;
     device.poll()?;
+
     let jvs = device.poll_jvs()?;
     let val = device.poll_slider()?;
-    Ok((jvs, val))
+    let coin = device.poll_coin()?;
+
+    Ok(DeviceUpdate { jvs, val, coin })
 }
 
 impl DeviceCollection {
@@ -42,17 +57,21 @@ impl DeviceCollection {
         let mut jvs = (0, 0);
         let mut val = [0u8; 32];
 
+        let mut coin = false;
+
         // Update devices and track failures
         self.devices.retain_mut(|(device, error_count)| {
-            match update_device(device, &o.slider) {
-                Ok((new_jvs, new_val)) => {
+            match update_device(device, o) {
+                Ok(new) => {
                     *error_count = 0; // Reset error count on success
 
-                    jvs.0 |= new_jvs.0; // FN buttons
-                    jvs.1 |= new_jvs.1; // IR beams
+                    coin |= new.coin;
+
+                    jvs.0 |= new.jvs.0; // FN buttons
+                    jvs.1 |= new.jvs.1; // IR beams
 
                     for i in 0..32 {
-                        val[i] = std::cmp::max(val[i], new_val[i]);
+                        val[i] = std::cmp::max(val[i], new.val[i]);
                     }
 
                     true // Keep device
@@ -72,8 +91,11 @@ impl DeviceCollection {
             }
         });
 
+        i.coin_count = i.coin_count.wrapping_add(u16::from(!self.coin && coin));
         i.fn_buttons = jvs.0;
         i.ir_sensors = jvs.1;
         i.slider_pressure = val;
+
+        self.coin = coin;
     }
 }

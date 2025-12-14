@@ -8,7 +8,7 @@ use std::{
     time::Duration,
 };
 
-use log::{debug, error, info};
+use log::{debug, info};
 use rusb::{GlobalContext, HotplugBuilder};
 use zerocopy::FromZeros;
 use zerocopy_derive::FromZeros;
@@ -25,8 +25,9 @@ mod shared_memory;
 pub trait InputDevice: Send {
     fn poll(&mut self) -> anyhow::Result<()>;
     fn poll_jvs(&mut self) -> anyhow::Result<(u8, u8)>;
+    fn poll_coin(&mut self) -> anyhow::Result<bool>;
     fn poll_slider(&mut self) -> anyhow::Result<[u8; 32]>;
-    fn set_leds(&mut self, brg: &[Rgb; 31]) -> anyhow::Result<()>;
+    fn set_leds(&mut self, slider: &[Rgb; 31], tower_l: &[Rgb; 3], tower_r: &[Rgb; 3]) -> anyhow::Result<()>;
 }
 
 pub type Rgb = [u8; 3];
@@ -75,7 +76,6 @@ static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 
 fn init_child(state: *mut SharedState) {
     info!("Initializing as child (64-bit)");
-    // There's nothing to do here, at least for now.
 
     while unsafe { (*state).m } != MAGIC {
         debug!("waiting for host to initialize...");
@@ -92,16 +92,10 @@ fn init_host(state: *mut SharedState) {
     let mut dm = DeviceCollection::new(recv);
 
     let ctx = GlobalContext {};
-    let _rh = match HotplugBuilder::new()
+    let _rh = HotplugBuilder::new()
         .enumerate(true)
         .register(ctx, Box::new(DeviceFinder(send)))
-    {
-        Ok(h) => h,
-        Err(e) => {
-            error!("Failed to register hotplug: {e}");
-            return;
-        }
-    };
+        .expect("Failed to register hotplug callback");
 
     unsafe { state.write(SharedState::new_zeroed()) };
     unsafe { (*state).m = MAGIC };

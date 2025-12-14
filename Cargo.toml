@@ -10,8 +10,10 @@ crate-type = ["cdylib"]
 anyhow = "1.0.100"
 env_logger = "0.11.8"
 log = "0.4.29"
+parking_lot = "0.12.5"
 rusb = "0.9.4"
 shared_memory = "0.12.4"
+windows-sys = { version = "0.61.2", features = ["Win32_UI_Input_KeyboardAndMouse"] }
 zerocopy = "0.8.31"
 zerocopy-derive = "0.8.31"
 
