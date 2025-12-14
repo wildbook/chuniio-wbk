@@ -1,7 +1,7 @@
 use std::{
     ffi::c_void,
     sync::{
-        Mutex, OnceLock,
+        OnceLock,
         atomic::{AtomicBool, AtomicPtr, Ordering},
     },
     thread::JoinHandle,
@@ -9,6 +9,7 @@ use std::{
 };
 
 use log::{debug, info};
+use parking_lot::Mutex;
 use rusb::{GlobalContext, HotplugBuilder};
 use zerocopy::FromZeros;
 use zerocopy_derive::FromZeros;
@@ -136,11 +137,11 @@ extern "system" fn DllMain(_hinst: *mut c_void, reason: u32, _reserved: *mut c_v
     static THREAD: Mutex<Option<JoinHandle<()>>> = Mutex::new(None);
 
     match reason {
-        DLL_PROCESS_ATTACH => *THREAD.lock().unwrap() = Some(std::thread::spawn(initialize)),
+        DLL_PROCESS_ATTACH => *THREAD.lock() = Some(std::thread::spawn(initialize)),
         DLL_PROCESS_DETACH => {
             SHUTDOWN.store(true, Ordering::Release);
 
-            if let Some(handle) = THREAD.lock().unwrap().take() {
+            if let Some(handle) = THREAD.lock().take() {
                 info!("Waiting for main thread to exit.");
                 handle.join().unwrap();
             }

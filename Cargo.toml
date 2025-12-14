@@ -8,7 +8,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1.0.100"
-env_logger = "0.11.8"
+cute-log = "2.2.0"
 log = "0.4.29"
 parking_lot = "0.12.5"
 rusb = "0.9.4"

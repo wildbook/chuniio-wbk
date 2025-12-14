@@ -1,14 +1,9 @@
-use std::io::Write;
+use cute_log::Logger;
 
 pub fn init_logger() {
-    env_logger::builder()
-        .filter_level(::log::LevelFilter::Trace)
-        .parse_default_env()
-        .format(|f, record| {
-            let target = record.target();
-            let level = record.level();
+    const LOGGER: Logger = Logger::new();
+    LOGGER.set_max_level(::log::LevelFilter::Info);
+    LOGGER.set_logger().expect("Failed to set logger");
 
-            writeln!(f, "{level} {target} -> {}", record.args())
-        })
-        .init();
+    log::info!("logger initialized!");
 }
