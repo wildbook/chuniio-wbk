@@ -27,7 +27,7 @@ pub extern "C" fn chuni_io_slider_start(callback: Option<SliderCallbackFn>) {
     static CALLBACK_FN: AtomicPtr<()> /* SliderCallbackFn */ = AtomicPtr::new(dummy_callback as _);
     debug!("chuni_io_slider_start: {callback:?}");
 
-    // Set the active callback, or a dummy if none pr
+    // Set the active callback, or a dummy if null.
     let callback = callback.unwrap_or(dummy_callback);
     CALLBACK_FN.store(callback as _, Ordering::Relaxed);
 
