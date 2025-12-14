@@ -9,7 +9,7 @@ use std::{
 };
 
 use parking_lot::Mutex;
-use rusb::{GlobalContext, HotplugBuilder};
+use rusb::{GlobalContext, HotplugBuilder, UsbContext};
 use tracing::{debug, info};
 use zerocopy::FromZeros;
 use zerocopy_derive::FromZeros;
@@ -104,6 +104,9 @@ fn init_host(state: *mut SharedState) {
     STATE.store(state, Ordering::Release);
 
     while !SHUTDOWN.load(Ordering::Acquire) {
+        ctx.handle_events(Some(Duration::ZERO))
+            .expect("Failed to handle USB events");
+
         dm.update_devices(state);
         std::thread::sleep(Duration::from_millis(1));
     }
