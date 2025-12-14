@@ -11,8 +11,7 @@ anyhow = "1.0.100"
 parking_lot = "0.12.5"
 rusb = "0.9.4"
 shared_memory = "0.12.4"
-tracing = "0.1.43"
-tracing-chrome = "0.7.2"
+tracing = { version = "0.1.43", features = ["release_max_level_off"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "ansi"] }
 windows-sys = { version = "0.61.2", features = ["Win32_UI_Input_KeyboardAndMouse"] }
 zerocopy = "0.8.31"

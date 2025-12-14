@@ -1,14 +1,13 @@
 use std::fs::OpenOptions;
 
-use tracing_subscriber::{Layer, Registry, filter::LevelFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{Registry, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub type Guard = ();
 
 pub fn init_logger() -> Guard {
-    let level = match cfg!(debug_assertions) {
-        true => LevelFilter::TRACE,
-        false => LevelFilter::INFO,
-    };
+    if !cfg!(debug_assertions) {
+        return;
+    }
 
     let suffix = match std::mem::size_of::<usize>() {
         4 => "x86",
@@ -28,8 +27,7 @@ pub fn init_logger() -> Guard {
                 .with_target(true)
                 .with_level(true)
                 .without_time()
-                .compact()
-                .with_filter(level),
+                .compact(),
         )
         .with(
             fmt::layer() //
